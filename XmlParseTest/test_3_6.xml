@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<Etr290ExportData name="EtrData" hwId="0120-4EF9-B363-6E4E-86F1" crc="7db6a942" release="4.10.0-13-263-ge8b4cb3">
+  <input name="ASI" type="ASI" id="0" numTs="0" numTsPri1Err="0" numTsPri2Err="0" numTsPri3Err="0" numTsOtherErr="0" numTsInterfaceErr="0" />
+  <input name="ASI" type="ASI" id="1" numTs="0" numTsPri1Err="0" numTsPri2Err="0" numTsPri3Err="0" numTsOtherErr="0" numTsInterfaceErr="0" />
+  <input name="ASI" type="ASI" id="1" numTs="0" numTsPri1Err="0" numTsPri2Err="0" numTsPri3Err="0" numTsOtherErr="0" numTsInterfaceErr="0" /> 
+</Etr290ExportData>

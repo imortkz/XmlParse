@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<Etr290ExportData name="EtrData" hwId="0120-4EF9-B363-6E4E-86F1" crc="7db6a942" release="4.10.0-13-263-ge8b4cb3">
+  <input name="Ethernet" type="Ethernet" id="100" numTs="1" numTsPri1Err="1" numTsPri2Err="1" numTsPri3Err="1" numTsOtherErr="0" numTsInterfaceErr="0">
+    <tuningSetup name="TS1" id="0" etrEngineNo="0" description="238.1.1.1:1000" mode="DVB" tsSync="yes" currentlyMonitored="true" monitoringProgress="100" timeSinceUpdate="41" oNwId="41007" nwId="41007" tsId="10" alarmOverview="OOOOOA|OOAODO|AAOAAOO|DOOOOOOD|DO" totalBitrate="39968000" effectiveBitrate="19480000" minimumTotalBitrate="4312000" minimumEffectiveBitrate="0" maximumTotalBitrate="39984000" maximumEffectiveBitrate="29768000"/>
+  </input>
+  <input name="ASI" type="ASI" id="0" numTs="0" numTsPri1Err="0" numTsPri2Err="0" numTsPri3Err="0" numTsOtherErr="0" numTsInterfaceErr="0"/>
+  <input name="COFDM1" type="VB252" id="1" numTs="3" numTsPri1Err="3" numTsPri2Err="1" numTsPri3Err="1" numTsOtherErr="0" numTsInterfaceErr="3">
+    <tuningSetup name="RF1" id="1" etrEngineNo="0" description="506 MHz, DVB-T2" mode="DVB" tsSync="unknown" minSignalLevel="-37.6 dBm" maxSignalLevel="-37.6 dBm" frequency="506000000" system="DVB-T2" channelSpacing="8000000" currentlyMonitored="true" monitoringProgress="25" timeSinceUpdate="62" tsId="10" alarmOverview="UUUUUU|UUUUUU|UUUUUUU|UUUUUUUU|UUUUAUUUUU" totalBitrate="40216000" effectiveBitrate="19640000" minimumTotalBitrate="40216000" minimumEffectiveBitrate="18160000" maximumTotalBitrate="40216000" maximumEffectiveBitrate="24320000"/>
+    <tuningSetup name="NewPreset1" id="2" etrEngineNo="0" description="450 MHz, DVB-T2" mode="DVB" tsSync="no" minSignalLevel="-98.6 dBm" maxSignalLevel="-98.6 dBm" frequency="450000000" system="DVB-T2" channelSpacing="8000000" timeSinceUpdate="40" alarmOverview="ADDDDD|DDDDDD|DDDDDDD|DDDDDDDD|DDDDADDDDD"/>
+    <tuningSetup name="NewPreset1 (1)" id="3" etrEngineNo="0" description="450 MHz, DVB-T2" mode="DVB" tsSync="no" minSignalLevel="-98.6 dBm" maxSignalLevel="-98.6 dBm" frequency="450000000" system="DVB-T2" channelSpacing="8000000" timeSinceUpdate="18" alarmOverview="ADDDDD|DDDDDD|DDDDDDD|DDDDDDDD|DDDDADDDDD"/>
+  </Input>
+  <input name="COFDM2" type="VB252" id="2" numTs="1" numTsPri1Err="1" numTsPri2Err="0" numTsPri3Err="0" numTsOtherErr="0" numTsInterfaceErr="1">
+    <tuningSetup name="NewPreset1" id="1" etrEngineNo="0" description="506 MHz, DVB-T2" mode="DVB" tsSync="no" minSignalLevel="-103.0 dBm" maxSignalLevel="-91.6 dBm" frequency="506000000" system="DVB-T2" channelSpacing="8000000" currentlyMonitored="true" monitoringProgress="100" timeSinceUpdate="8" alarmOverview="ADDDDD|DDDDDD|DDDDDDD|DDDDDDDD|DDDDADDDDD"/>
+  </input>
+</Etr290ExportData>
