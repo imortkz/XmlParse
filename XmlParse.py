@@ -37,17 +37,20 @@ class XmlParse:
                        101: 'не удаётся открыть HTTP ссылку.',
                        102: 'не удаётся открыть файл.',
                        103: 'параметру max_size передано недопустимое значение',
+                       104: 'параметру parent_tag передано недопустимое значение',
+                       105: 'параметру parent_attr передано недопустимое значение',
+                       106: 'параметру child_tag передано недопустимое значение',
+                       107: 'параметру child_attr передано недопустимое значение',
                        200: 'документ не является валидным документом XML.',
                        201: 'размер документа превышает допустимый.',
-                       202: 'у элемента <input> отсутствует атрибут id.',
-                       203: 'у элемента <input> атрибут id имеет недопустимое значение (не целочисленное \
-                             положительное или равное нулю).',
-                       204: 'у элемента <tuningSetup> отсутствует атрибут id.',
-                       205: 'у элемента <tuningSetup> атрибут id имеет недопустимое значение (не целочисленное \
-                             положительное или равное нулю).',
-                       206: 'есть элементы <input> с дублирующимися атрибутами id.',
+                       202: 'у элемента отсутствует заданный атрибут',
+                       203: 'есть элементы с дублирующимися значениями заданного атрибута',
                        }
         self.__max_size = 16384
+        self.__parent_tag = ''
+        self.__parent_attr = ''
+        self.__child_tag = ''
+        self.__child_attr = ''
 
     # свойство max_size - максимальный размер XML документа для обработки
     @property
@@ -61,6 +64,66 @@ class XmlParse:
         if size == 0 or size < 0 or size >= sys.maxsize:
             raise XmlParseException(self.__error(103, size), 103)
         self.__max_size = int(size)
+
+    # свойство parent_tag - родительский тег для разбора
+    @property
+    def parent_tag(self):
+        return self.__parent_tag
+
+    @parent_tag.setter
+    def parent_tag(self, tag_name):
+        if not self.__check_str_input (tag_name):
+            raise XmlParseException(self.__error(104, tag_name), 104)
+        else:
+            self.__parent_tag = tag_name
+
+    # свойство parent_attr - родительский тег для разбора
+    @property
+    def parent_attr(self):
+        return self.__parent_attr
+
+    @parent_attr.setter
+    def parent_attr(self, tag_name):
+        if not self.__check_str_input (tag_name):
+            raise XmlParseException(self.__error(105, tag_name), 105)
+        else:
+            self.__parent_attr = tag_name
+
+    # свойство child_tag - тег потомка для разбора
+    @property
+    def child_tag(self):
+        return self.__child_tag
+
+    @child_tag.setter
+    def child_tag(self, tag_name):
+        if not self.__check_str_input (tag_name):
+            raise XmlParseException(self.__error(106, tag_name), 106)
+        else:
+            self.__child_tag = tag_name
+
+    # свойство parent_attr - родительский тег для разбора
+    @property
+    def child_attr(self):
+        return self.__child_attr
+
+    @child_attr.setter
+    def child_attr(self, tag_name):
+        if not self.__check_str_input (tag_name):
+            raise XmlParseException(self.__error(107, tag_name), 107)
+        else:
+            self.__child_attr = tag_name
+
+    # проверка строкового параметра на корректность
+    def __check_str_input(self, tag_name):
+        if not isinstance(tag_name, str):
+            return False
+        if (len(tag_name) == 0) or (len(tag_name) >= sys.maxsize):
+            return False
+        return True
+
+    # формирование поясняющего сообщения об ошибке для исключения
+    def __error(self, error_code, description):
+        return str(error_code)+' - '+self.errors[error_code] + ' (' + str(description) + ')'
 
     # проверяем входящие данные на базовую корректность в случае локального файла
     def __check_file(self, filename):
@@ -107,22 +170,7 @@ class XmlParse:
             raise XmlParseException(self.__error(100, address), 100)
         return 0
 
-    # формирование поясняющего сообщения об ошибке для исключения
-    def __error(self, error_code, description):
-        return str(error_code)+' - '+self.errors[error_code] + ' (' + str(description) + ')'
-
-    # проверка атрибута id на корректное значение
-    def __is_valid_id(self, test_id):
-        try:
-            test_id = int(test_id)
-        except:
-            return False
-        if (test_id < 0) or (test_id is None) or (test_id >= sys.maxsize):
-            return False
-        else:
-            return True
-
-    # проверка XML файла на валидность и соответствие требованиям спецификации, проверка на ошибки 200,202-206
+    # проверка XML файла на валидность и соответствие требованиям спецификации
     def __check_xml(self, xml_string):
         # если размер XML документа более 16 Кбайт
         if len(xml_string) > self.__max_size:
@@ -131,40 +179,42 @@ class XmlParse:
             root = et.fromstring(xml_string)
         except:
             raise XmlParseException(self.__error(200, xml_string), 200)
-        input_id_list = []
-        # находим все элементы <input>
-        for input_tag in root.iter('input'):
-            # проверка на наличие атрибута id в ноде input
-            if 'id' not in input_tag.attrib:
-                raise XmlParseException(self.__error(202, '<input "name"='+input_tag.attrib['name']+'>'), 202)
-            # проверка на валидность значения атрибута id в ноде input
-            if not self.__is_valid_id(input_tag.attrib['id']):
-                raise XmlParseException(self.__error(203, '<input "name"='+input_tag.attrib['name']+'>'), 203)
-            # проверка на уникальность атрибута id в ноде input
-            if input_tag.attrib['id'] in input_id_list:
-                raise XmlParseException(self.__error(206, '<input "name"='+input_tag.attrib['name']+'>'), 206)
-            input_id_list.append(input_tag.attrib['id'])
-            for child in input_tag:
-                if child.tag == 'tuningSetup': 
+        parent_attr_list = []
+        if not self.__check_str_input (self.parent_tag):
+            raise XmlParseException(self.__error(104, self.parent_tag), 104)
+        if not self.__check_str_input (self.parent_attr):
+            raise XmlParseException(self.__error(105, self.parent_tag), 105)
+        if not self.__check_str_input (self.child_tag):
+            raise XmlParseException(self.__error(106, self.parent_tag), 106)
+        if not self.__check_str_input (self.child_attr):
+            raise XmlParseException(self.__error(107, self.parent_tag), 107)
+        # находим все элементы parent_tag
+        for parent_tag in root.iter(self.parent_tag):
+            # проверка на наличие атрибута parent_attr в элементе parent_tag
+            if self.parent_attr not in parent_tag.attrib:
+                raise XmlParseException(self.__error(202, str(self.parent_tag)+str(parent_tag.attrib)), 202)
+            # проверка на уникальность атрибута parent_attr в ноде parent_tag
+            if parent_tag.attrib[self.parent_attr] in parent_attr_list:
+                raise XmlParseException(self.__error(203, str(parent_tag.attrib[self.parent_attr])), 203)
+            parent_attr_list.append(parent_tag.attrib[self.parent_attr])
+            for child in parent_tag:
+                if child.tag == self.child_tag:
                     # проверка на наличие атрибута ID в ноде tuningSetup
-                    if 'id' not in child.attrib:
-                        raise XmlParseException(self.__error(204, '<tuningSetup "name"='+child.attrib['name']+'>'), 204)
-                    # проверка на валидность атрибута id в ноде tuningSetup
-                    if not self.__is_valid_id(child.attrib['id']):
-                        raise XmlParseException(self.__error(203, '<tuningSetup "name"='+child.attrib['name']+'>'), 205)
-        return 0        
+                    if self.child_attr not in child.attrib:
+                        raise XmlParseException(self.__error(202, str(child.attrib)), 202)
+        return 0
 
     # разбор XML документа из строки
     def __parse_xml(self, xml_string):
         result = {}
         temp = []
         root = et.fromstring(xml_string)
-        for input_tag in root.iter('input'):
-            for child in input_tag:
-                if child.tag == 'tuningSetup': 
-                    temp.append(child.attrib['id'])
+        for parent_tag in root.iter(self.parent_tag):
+            for child_tag in parent_tag:
+                if child_tag.tag == self.child_tag:
+                    temp.append(child_tag.attrib[self.child_attr])
             if len(temp) != 0: 
-                result[input_tag.attrib['id']] = temp.copy()
+                result[parent_tag.attrib[self.child_attr]] = temp.copy()
             temp.clear()
         return result
 
@@ -215,6 +265,10 @@ class XmlParseTest (unittest.TestCase):
                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).pid
         self.localPrefix = './XmlParseTest/'
         self.httpPrefix = 'http://localhost:8000/XmlParseTest/'
+        self.xmlParse.parent_tag = 'input'
+        self.xmlParse.parent_attr = 'id'
+        self.xmlParse.child_tag = 'tuningSetup'
+        self.xmlParse.child_attr = 'id'
 
     def tearDown(self):
         if platform.system() == 'Windows':
@@ -264,7 +318,7 @@ class XmlParseTest (unittest.TestCase):
         self.assertEqual(self.xmlParse.parse(self.httpPrefix + test_xml), {'1': ['1', '4'], '2': ['2'], '3': ['1']})
 
     # 2. Тестирование входных параметров
-    # 2.1. Параметр неверного типа
+    # 2.1. Параметр user_input неверного типа
     # 2.1.1. Число
     # 2.1.2. Список
     # 2.1.3. Null
@@ -274,8 +328,13 @@ class XmlParseTest (unittest.TestCase):
     # 2.2. Несуществующий файл, некорректный URL
     # 2.3. Несуществующий URL
     # 2.4. Слишком большой XML документ
-    # 2.5. Слишком большой документ (при увеличении xmlParse.max_size)
-    # 2.6. Некорректное значение xmlParse.max_size
+    # 2.5. Слишком большой документ (при увеличении xmlParse.maxSize)
+    # 2.6. Некорректное значение XmlParse.maxSize
+    # 2.7. Некорректное значение XmlParse.parent_tag
+    # 2.8. Некорректное значение XmlParse.parent_attr
+    # 2.9. Некорректное значение XmlParse.child_tag
+    # 2.10. Некорректное значение XmlParse.child_attr
+
 
     def test_2_1(self):
         test_data = [42, ['1', '2'], '', -1, {}, {'1': '2'}]
@@ -311,13 +370,43 @@ class XmlParseTest (unittest.TestCase):
             exception = cm.exception
             self.assertEqual(exception.error_code, 103)
 
+    def test_2_7(self):
+        test_data = [0, -42, '', []]
+        for test_tag in test_data:
+            with self.assertRaises(XmlParseException) as cm:
+                self.xmlParse.parent_tag = test_tag
+            exception = cm.exception
+            self.assertEqual(exception.error_code, 104)
+
+    def test_2_8(self):
+        test_data = [0, -42, '', []]
+        for test_attr in test_data:
+            with self.assertRaises(XmlParseException) as cm:
+                self.xmlParse.parent_attr = test_attr
+            exception = cm.exception
+            self.assertEqual(exception.error_code, 105)
+
+    def test_2_9(self):
+        test_data = [0, -42, '', []]
+        for test_tag in test_data:
+            with self.assertRaises(XmlParseException) as cm:
+                self.xmlParse.child_tag = test_tag
+            exception = cm.exception
+            self.assertEqual(exception.error_code, 106)
+
+    def test_2_10(self):
+        test_data = [0, -42, '', []]
+        for test_attr in test_data:
+            with self.assertRaises(XmlParseException) as cm:
+                self.xmlParse.child_attr = test_attr
+            exception = cm.exception
+            self.assertEqual(exception.error_code, 107)
+
     # 3. Тестирование разбора некорректного XML документа
     # 3.1. Невалидный XML документ
-    # 3.2. Есть нода <input> без атрибута id
-    # 3.3. Есть нода <input> с недопустимым значением атрибута id
-    # 3.4. Есть нода <tuningSetup> без атрибута id
-    # 3.5. Есть нода <tuningSetup> с недопустимым значением атрибута id
-    # 3.6. Есть нода <input> с дублирующимся атрибутом id
+    # 3.2. Есть нода parent_tag без атрибута parent_attr
+    # 3.3. Есть нода child_tag без атрибута child_attr
+    # 3.4. Есть нода parent_tag с дублирующимся атрибутом parent_attr
 
     def test_3_1(self):
         test_files = ['test_3_1_1.xml', 'test_3_1_2.xml', 'test_3_1_3.xml']
@@ -331,26 +420,14 @@ class XmlParseTest (unittest.TestCase):
         self.assertEqual(self.__test_input(self.httpPrefix + test_xml), 202)
 
     def test_3_3(self):
-        test_files = ['test_3_3_1.xml', 'test_3_3_2.xml', 'test_3_3_3.xml']
-        for test_xml in test_files:
-            self.assertEqual(self.__test_input(self.localPrefix + test_xml), 203)
-            self.assertEqual(self.__test_input(self.httpPrefix + test_xml), 203)
+        test_xml = 'test_3_4.xml'
+        self.assertEqual(self.__test_input(self.localPrefix + test_xml), 202)
+        self.assertEqual(self.__test_input(self.httpPrefix + test_xml), 202)
 
     def test_3_4(self):
-        test_xml = 'test_3_4.xml'
-        self.assertEqual(self.__test_input(self.localPrefix + test_xml), 204)
-        self.assertEqual(self.__test_input(self.httpPrefix + test_xml), 204)
-
-    def test_3_5(self):
-        test_files = ['test_3_5_1.xml', 'test_3_5_2.xml', 'test_3_5_3.xml']
-        for test_xml in test_files:
-            self.assertEqual(self.__test_input(self.localPrefix + test_xml), 205)
-            self.assertEqual(self.__test_input(self.httpPrefix + test_xml), 205)
-
-    def test_3_6(self):
         test_xml = 'test_3_6.xml'
-        self.assertEqual(self.__test_input(self.localPrefix + test_xml), 206)
-        self.assertEqual(self.__test_input(self.httpPrefix + test_xml), 206)
+        self.assertEqual(self.__test_input(self.localPrefix + test_xml), 203)
+        self.assertEqual(self.__test_input(self.httpPrefix + test_xml), 203)
 
 if __name__ == '__main__':
     unittest.main()
