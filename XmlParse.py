@@ -1,7 +1,8 @@
-#!/usr/bin/python
+#! /usr/bin/python3.4
+#! /usr/bin/python
 #
 # test XML parse class
-# Copyright © 2015 Valentin Kim
+# Copyright (c) 2015 Valentin Kim
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
