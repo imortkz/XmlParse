@@ -51,6 +51,7 @@ class XmlParse:
         self.__parent_attr = ''
         self.__child_tag = ''
         self.__child_attr = ''
+        self.__xml_text = ''
 
     # свойство max_size - максимальный размер XML документа для обработки
     @property
@@ -132,7 +133,6 @@ class XmlParse:
             # существует ли файл по указанному пути, есть ли права его открыть на чтение
             try:
                 xmlfile = open(filename, 'rt')
-                xmlfile.close()
             except:
                 raise XmlParseException(self.__error(102, filename), 102)
             # укладывается ли размер файла в разрешённый диапазон
@@ -141,14 +141,13 @@ class XmlParse:
                                                      str(self.__max_size)), 201)
             # базовая проверка XML документа на валидность
             try:
-                xmlfile = open(filename, 'rt')
-                xmldata = xmlfile.read()
-                xmlfile.close()
-                root = et.fromstring(xmldata)
+                self.__xml_text = xmlfile.read()
+                et.fromstring(self.__xml_text)
             except:
                 raise XmlParseException(self.__error(200, filename), 200)
         else:
             raise XmlParseException(self.__error(100, filename), 100)
+        xmlfile.close()
         return 0
 
     # проверяем входящие данные на базовую корректность в случае HTTP ссылки
@@ -168,6 +167,8 @@ class XmlParse:
                 raise XmlParseException(self.__error(201, headers.get('Content-Length')), 201)
         else: 
             raise XmlParseException(self.__error(100, address), 100)
+        conn = ur.urlopen(address)
+        self.__xml_text = conn.read()
         return 0
 
     # проверка XML файла на валидность и соответствие требованиям спецификации
@@ -229,24 +230,19 @@ class XmlParse:
         if len(parsed_input) == 1:
             # в качестве параметра передан URL
             # проверяем входящие данные на базовую корректность
-            startup_check = self.__check_address(parsed_input[0])
-            conn = ur.urlopen(parsed_input[0])
-            xml_string = conn.read()
+            self.__check_address(parsed_input[0])
             # проверяем XML на ошибки семантики
-            semantic_check = self.__check_xml(xml_string)
+            self.__check_xml(self.__xml_text)
             # извлекаем данные
-            return self.__parse_xml(xml_string)
+            return self.__parse_xml(self.__xml_text)
         else:
             # в качестве параметра передан путь к локальному файлу
             # проверяем входящие данные на базовую корректность
             self.__check_file(user_input)
-            xml_file = open(user_input, 'rt')
-            xml_string = xml_file.read()
-            xml_file.close()
             # проверяем XML на ошибки семантики
-            self.__check_xml(xml_string)
+            self.__check_xml(self.__xml_text)
             # извлекаем данные
-            return self.__parse_xml(xml_string)
+            return self.__parse_xml(self.__xml_text)
 
 
 # класс исключения для xmlParse()
@@ -261,27 +257,19 @@ class XmlParseTest (unittest.TestCase):
     def setUp(self):
         # запускаем локальный web сервер (для каждого теста он стартует и завершает работу)
         self.xmlParse = XmlParse()
-        self.httpd = subprocess.Popen(["python", "-m", "http.server"], stdin=subprocess.DEVNULL,
-                                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).pid
         self.localPrefix = './XmlParseTest/'
-        self.httpPrefix = 'http://localhost:8000/XmlParseTest/'
         self.xmlParse.parent_tag = 'input'
         self.xmlParse.parent_attr = 'id'
         self.xmlParse.child_tag = 'tuningSetup'
         self.xmlParse.child_attr = 'id'
 
     def tearDown(self):
-        if platform.system() == 'Windows':
-            subprocess.Popen("taskkill /F /T /PID "+str(self.httpd), shell=True, stdin=subprocess.DEVNULL,
-                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        if platform.system() == 'Linux':
-            os.system('kill -9 ' + str(self.httpd))
+        pass
 
     def __test_input(self, xml_string):
         with self.assertRaises(XmlParseException) as cm:
             self.xmlParse.parse(xml_string)
-        exception = cm.exception
-        return exception.error_code    
+        return cm.exception.error_code
 
     # 1. Тестирование разбора корректного XML документа
     # 1.1. Предоставленный исходный текст
@@ -294,28 +282,22 @@ class XmlParseTest (unittest.TestCase):
         test_xml = 'source.xml'
         self.assertEqual(self.xmlParse.parse(self.localPrefix + test_xml),
                          {'100': ['0'], '1': ['1', '2', '3'], '2': ['1']})
-        self.assertEqual(self.xmlParse.parse(self.httpPrefix + test_xml),
-                         {'100': ['0'], '1': ['1', '2', '3'], '2': ['1']})
 
     def test_1_2(self):
         test_xml = 'test_1_2.xml'
         self.assertEqual(self.xmlParse.parse(self.localPrefix + test_xml), {})
-        self.assertEqual(self.xmlParse.parse(self.httpPrefix + test_xml), {})
 
     def test_1_3(self):
         test_xml = 'test_1_3.xml'
         self.assertEqual(self.xmlParse.parse(self.localPrefix + test_xml), {'1': ['1'], '2': ['2']})
-        self.assertEqual(self.xmlParse.parse(self.httpPrefix + test_xml), {'1': ['1'], '2': ['2']})
 
     def test_1_4(self):
         test_xml = 'test_1_4.xml'
         self.assertEqual(self.xmlParse.parse(self.localPrefix + test_xml), {'2': ['2'], '1': ['1']})
-        self.assertEqual(self.xmlParse.parse(self.httpPrefix + test_xml), {'2': ['2'], '1': ['1']})
 
     def test_1_5(self):
         test_xml = 'test_1_5.xml'
         self.assertEqual(self.xmlParse.parse(self.localPrefix + test_xml), {'1': ['1', '4'], '2': ['2'], '3': ['1']})
-        self.assertEqual(self.xmlParse.parse(self.httpPrefix + test_xml), {'1': ['1', '4'], '2': ['2'], '3': ['1']})
 
     # 2. Тестирование входных параметров
     # 2.1. Параметр user_input неверного типа
@@ -335,11 +317,9 @@ class XmlParseTest (unittest.TestCase):
     # 2.9. Некорректное значение XmlParse.child_tag
     # 2.10. Некорректное значение XmlParse.child_attr
 
-
     def test_2_1(self):
         test_data = [42, ['1', '2'], '', -1, {}, {'1': '2'}]
         for test_input in test_data:
-            self.assertEqual(self.__test_input(test_input), 100)
             self.assertEqual(self.__test_input(test_input), 100)
 
     def test_2_2(self):
@@ -352,55 +332,47 @@ class XmlParseTest (unittest.TestCase):
     def test_2_4(self):
         test_xml = 'test_2_4.xml'
         self.assertEqual(self.__test_input(self.localPrefix + test_xml), 201)
-        self.assertEqual(self.__test_input(self.httpPrefix + test_xml), 201)
 
     def test_2_5(self):
         self.xmlParse.max_size = 32768
         test_files = ['test_2_4.xml', 'test_2_5.xml']
         self.assertEqual(self.xmlParse.parse(self.localPrefix + test_files[0]), {})
-        self.assertEqual(self.xmlParse.parse(self.httpPrefix + test_files[0]), {})
         self.assertEqual(self.__test_input(self.localPrefix + test_files[1]), 201)
-        self.assertEqual(self.__test_input(self.httpPrefix + test_files[1]), 201)
 
     def test_2_6(self):
         test_data = [0, -42, 'test', []]
         for test_size in test_data:
             with self.assertRaises(XmlParseException) as cm:
                 self.xmlParse.max_size = test_size
-            exception = cm.exception
-            self.assertEqual(exception.error_code, 103)
+            self.assertEqual(cm.exception.error_code, 103)
 
     def test_2_7(self):
         test_data = [0, -42, '', []]
         for test_tag in test_data:
             with self.assertRaises(XmlParseException) as cm:
                 self.xmlParse.parent_tag = test_tag
-            exception = cm.exception
-            self.assertEqual(exception.error_code, 104)
+            self.assertEqual(cm.exception.error_code, 104)
 
     def test_2_8(self):
         test_data = [0, -42, '', []]
         for test_attr in test_data:
             with self.assertRaises(XmlParseException) as cm:
                 self.xmlParse.parent_attr = test_attr
-            exception = cm.exception
-            self.assertEqual(exception.error_code, 105)
+            self.assertEqual(cm.exception.error_code, 105)
 
     def test_2_9(self):
         test_data = [0, -42, '', []]
         for test_tag in test_data:
             with self.assertRaises(XmlParseException) as cm:
                 self.xmlParse.child_tag = test_tag
-            exception = cm.exception
-            self.assertEqual(exception.error_code, 106)
+            self.assertEqual(cm.exception.error_code, 106)
 
     def test_2_10(self):
         test_data = [0, -42, '', []]
         for test_attr in test_data:
             with self.assertRaises(XmlParseException) as cm:
                 self.xmlParse.child_attr = test_attr
-            exception = cm.exception
-            self.assertEqual(exception.error_code, 107)
+            self.assertEqual(cm.exception.error_code, 107)
 
     # 3. Тестирование разбора некорректного XML документа
     # 3.1. Невалидный XML документ
@@ -412,22 +384,18 @@ class XmlParseTest (unittest.TestCase):
         test_files = ['test_3_1_1.xml', 'test_3_1_2.xml', 'test_3_1_3.xml']
         for test_xml in test_files:
             self.assertEqual(self.__test_input(self.localPrefix + test_xml), 200)
-            self.assertEqual(self.__test_input(self.httpPrefix + test_xml), 200)
 
     def test_3_2(self):
         test_xml = 'test_3_2.xml'
         self.assertEqual(self.__test_input(self.localPrefix + test_xml), 202)
-        self.assertEqual(self.__test_input(self.httpPrefix + test_xml), 202)
 
     def test_3_3(self):
         test_xml = 'test_3_4.xml'
         self.assertEqual(self.__test_input(self.localPrefix + test_xml), 202)
-        self.assertEqual(self.__test_input(self.httpPrefix + test_xml), 202)
 
     def test_3_4(self):
         test_xml = 'test_3_6.xml'
         self.assertEqual(self.__test_input(self.localPrefix + test_xml), 203)
-        self.assertEqual(self.__test_input(self.httpPrefix + test_xml), 203)
 
 if __name__ == '__main__':
     unittest.main()
